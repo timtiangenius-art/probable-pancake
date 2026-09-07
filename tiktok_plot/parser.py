@@ -1,0 +1,220 @@
+"""Parse a TikTok plot file into structured scenes.
+
+Format
+------
+An optional YAML-ish front matter block, then one scene per line::
+
+    ---
+    title: Why your coffee tastes bad
+    style: claude
+    seconds_per_scene: 3
+    ---
+    POV: you spent $300 on a grinder | close-up of a burr grinder, marble counter
+    (4s) Your water is the problem | tap water pouring into a clear glass
+
+Rules:
+
+* Every non-empty line that is not a comment is exactly one scene.
+* ``|`` splits the on-screen text (left) from the visual direction (right).
+  A line without ``|`` is on-screen text only; the visual is inferred later.
+* ``(3s)`` / ``(2.5s)`` at the start of a line overrides that scene's duration.
+* ``#`` starts a comment line. Text may still contain ``#`` (hashtags) as long
+  as the line does not *begin* with one.
+"""
+
+from __future__ import annotations
+
+import json
+import re
+from dataclasses import dataclass, field, asdict
+from pathlib import Path
+from typing import Any
+
+FRONT_MATTER_FENCE = "---"
+DURATION_RE = re.compile(r"^\(\s*(\d+(?:\.\d+)?)\s*s\s*\)\s*", re.IGNORECASE)
+TRUTHY = {"true", "yes", "y", "1", "on"}
+FALSY = {"false", "no", "n", "0", "off"}
+
+DEFAULT_SECONDS_PER_SCENE = 3.0
+MIN_SCENE_SECONDS = 0.5
+MAX_SCENE_SECONDS = 30.0
+
+
+class ParseError(ValueError):
+    """Raised when a plot file cannot be understood."""
+
+
+@dataclass
+class Scene:
+    """One line of the plot: a single picture with text on it."""
+
+    index: int
+    text: str
+    visual: str
+    seconds: float
+    line_number: int
+    role: str = "beat"
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass
+class Plot:
+    """A parsed plot: metadata plus an ordered list of scenes."""
+
+    scenes: list[Scene]
+    title: str = ""
+    style: str = ""
+    aspect: str = "9:16"
+    seconds_per_scene: float = DEFAULT_SECONDS_PER_SCENE
+    voiceover: bool = False
+    music: str = ""
+    notes: str = ""
+    extras: dict[str, str] = field(default_factory=dict)
+
+    @property
+    def duration(self) -> float:
+        return round(sum(scene.seconds for scene in self.scenes), 2)
+
+    @property
+    def hook(self) -> Scene | None:
+        return self.scenes[0] if self.scenes else None
+
+    @property
+    def payoff(self) -> Scene | None:
+        return self.scenes[-1] if self.scenes else None
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "title": self.title,
+            "style": self.style,
+            "aspect": self.aspect,
+            "seconds_per_scene": self.seconds_per_scene,
+            "voiceover": self.voiceover,
+            "music": self.music,
+            "notes": self.notes,
+            "extras": self.extras,
+            "duration": self.duration,
+            "scene_count": len(self.scenes),
+            "scenes": [scene.to_dict() for scene in self.scenes],
+        }
+
+    def to_json(self, indent: int = 2) -> str:
+        return json.dumps(self.to_dict(), indent=indent, ensure_ascii=False)
+
+
+def _split_front_matter(lines: list[str]) -> tuple[list[tuple[int, str]], list[tuple[int, str]]]:
+    """Return (front_matter_lines, body_lines) as (line_number, text) pairs."""
+    numbered = list(enumerate(lines, start=1))
+    first = next((i for i, (_, raw) in enumerate(numbered) if raw.strip()), None)
+    if first is None or numbered[first][1].strip() != FRONT_MATTER_FENCE:
+        return [], numbered
+
+    for i in range(first + 1, len(numbered)):
+        if numbered[i][1].strip() == FRONT_MATTER_FENCE:
+            return numbered[first + 1 : i], numbered[i + 1 :]
+    raise ParseError(
+        f"front matter opened on line {numbered[first][0]} but never closed "
+        f"with a matching '{FRONT_MATTER_FENCE}'"
+    )
+
+
+def _coerce_bool(key: str, value: str) -> bool:
+    lowered = value.strip().lower()
+    if lowered in TRUTHY:
+        return True
+    if lowered in FALSY:
+        return False
+    raise ParseError(f"'{key}' must be true or false, got {value!r}")
+
+
+def _coerce_seconds(key: str, value: str) -> float:
+    try:
+        seconds = float(value.strip().rstrip("sS"))
+    except ValueError:
+        raise ParseError(f"'{key}' must be a number of seconds, got {value!r}") from None
+    if not MIN_SCENE_SECONDS <= seconds <= MAX_SCENE_SECONDS:
+        raise ParseError(
+            f"'{key}' must be between {MIN_SCENE_SECONDS} and {MAX_SCENE_SECONDS} seconds, "
+            f"got {seconds}"
+        )
+    return seconds
+
+
+def _parse_front_matter(entries: list[tuple[int, str]]) -> dict[str, Any]:
+    meta: dict[str, Any] = {"extras": {}}
+    for line_number, raw in entries:
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        if ":" not in line:
+            raise ParseError(f"line {line_number}: front matter needs 'key: value', got {line!r}")
+        key, _, value = line.partition(":")
+        key = key.strip().lower().replace("-", "_")
+        value = value.strip()
+        if key in {"title", "style", "aspect", "music", "notes"}:
+            meta[key] = value
+        elif key == "voiceover":
+            meta[key] = _coerce_bool(key, value)
+        elif key == "seconds_per_scene":
+            meta[key] = _coerce_seconds(key, value)
+        else:
+            meta["extras"][key] = value
+    return meta
+
+
+def _parse_scene_line(line_number: int, raw: str, default_seconds: float, index: int) -> Scene:
+    line = raw.strip()
+    seconds = default_seconds
+    match = DURATION_RE.match(line)
+    if match:
+        seconds = _coerce_seconds("scene duration", match.group(1))
+        line = line[match.end() :].strip()
+
+    text, sep, visual = line.partition("|")
+    text = text.strip()
+    visual = visual.strip() if sep else ""
+    if not text and not visual:
+        raise ParseError(f"line {line_number}: scene has no text and no visual")
+    return Scene(
+        index=index,
+        text=text,
+        visual=visual,
+        seconds=seconds,
+        line_number=line_number,
+    )
+
+
+def parse_plot(source: str) -> Plot:
+    """Parse plot text into a :class:`Plot`."""
+    front_matter, body = _split_front_matter(source.splitlines())
+    meta = _parse_front_matter(front_matter)
+    default_seconds = meta.get("seconds_per_scene", DEFAULT_SECONDS_PER_SCENE)
+
+    scenes: list[Scene] = []
+    for line_number, raw in body:
+        stripped = raw.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        scenes.append(_parse_scene_line(line_number, raw, default_seconds, len(scenes) + 1))
+
+    if not scenes:
+        raise ParseError("plot has no scenes — add at least one line of on-screen text")
+
+    # The first line is the scroll-stopper and the last one is the payoff; both
+    # get different treatment downstream, so label them here.
+    scenes[0].role = "hook"
+    scenes[-1].role = "payoff" if len(scenes) > 1 else "hook"
+
+    extras = meta.pop("extras", {})
+    return Plot(scenes=scenes, extras=extras, **meta)
+
+
+def parse_plot_file(path: str | Path) -> Plot:
+    """Parse a plot file from disk."""
+    text = Path(path).read_text(encoding="utf-8")
+    plot = parse_plot(text)
+    if not plot.title:
+        plot.title = Path(path).stem.replace("-", " ").replace("_", " ").strip().title()
+    return plot

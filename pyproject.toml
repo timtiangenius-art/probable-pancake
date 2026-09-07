@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tiktok-plot"
+version = "0.1.0"
+description = "Turn a plain-text TikTok plot into a HyperFrames video brief"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+
+[project.scripts]
+tiktok-plot = "tiktok_plot.cli:main"
+
+[tool.setuptools]
+packages = ["tiktok_plot"]
