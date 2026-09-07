@@ -2,13 +2,13 @@
 # Build:  python3 -m tiktok_plot.cli build plots/coffee-shop.txt \
 #           -o build/coffee-shop --asset-base github
 ---
-title: Reasons to open a coffee shop
+title: Reasons to Open a Coffee Shop
 seconds_per_scene: 2.5
 music: driving beat with a hard drop landing exactly on the last scene
 notes: deadpan build-up for the first four scenes, then the drop and release on the payoff
 ---
-(2s) reasons to open a coffee shop | coffee-shop-photos/01-lease-space.jpg | hold on the wide shot, very slow push-in
-reason #1: lose 20k in 2 month | coffee-shop-photos/02-costs.png | let the red negative number stay readable, slow drift down the sheet
-reason #2: wake up at 5am | coffee-shop-photos/03-5am.jpg | slow drift across the skyline
-reason #3: doing construction at 98 degree | coffee-shop-photos/04-construction.jpg | slow push-in on the bare studs
-(4s) reason #4: enjoy paddling whenever you want | coffee-shop-photos/05-paddling.jpg | the drop lands here — hold wide and open, slow push-in toward the horizon
+(2s) Reasons to Open a Coffee Shop | coffee-shop-photos/01-lease-space.jpg | hold on the wide shot, very slow push-in
+Reason #1: Lose 20K in 2 Month | coffee-shop-photos/02-costs.png | let the red negative number stay readable, slow drift down the sheet
+Reason #2: Wake Up at 5AM | coffee-shop-photos/03-5am.jpg | slow drift across the skyline
+Reason #3: Doing Construction at 98 Degree | coffee-shop-photos/04-construction.jpg | slow push-in on the bare studs
+(4s) Reason #4: Enjoy Paddling Whenever You Want | coffee-shop-photos/05-paddling.jpg | the drop lands here — hold wide and open, slow push-in toward the horizon
