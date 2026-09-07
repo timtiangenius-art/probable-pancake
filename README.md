@@ -109,9 +109,16 @@ tiktok-plot build plot.txt -o build/mine
 ## Making the video
 
 `prompt.md` is the whole input to HyperFrames. In Claude Code, the bundled
-`/tiktok-video` skill does it end to end: paste your plot, and it saves it,
-builds the brief, calls HyperFrames `compose`, waits for the render, and hands
-back the video. Outside of that, paste `prompt.md` into HyperFrames yourself.
+`/tiktok-video` skill does it end to end: paste your plot, and it saves your
+pictures, builds the brief, authors a HyperFrames composition under `videos/`,
+renders the MP4 locally, and hands it back.
+
+Hosted HyperFrames `compose` is disabled for CLI agents, so the skill renders
+with the local HyperFrames CLI instead. That needs `ffmpeg` and a headless
+Chrome (`npx hyperframes browser ensure`), and it means the composition is
+plain HTML you can edit, diff and re-render. `videos/coffee-shop/` is a worked
+example. To drive the hosted product instead, paste `prompt.md` into
+HyperFrames on the web with the URLs from `--asset-base github`.
 
 The brief pins down the things a video agent otherwise guesses: canvas size,
 scene order, per-scene duration, and the exact on-screen copy (marked verbatim,
@@ -142,3 +149,5 @@ python3 -m unittest discover -s tests
 | `.claude/skills/tiktok-video/` | The `/tiktok-video` Claude Code skill |
 | `examples/coffee.txt` | A worked example, all pictures described |
 | `examples/with-photos.txt` | A worked example using supplied pictures |
+| `plots/coffee-shop.txt` | A real plot with five supplied photos |
+| `videos/coffee-shop/` | The HyperFrames composition rendered from it |

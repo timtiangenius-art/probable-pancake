@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en" data-resolution="portrait">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <title>Reasons to open a coffee shop</title>
+    <script src="vendor/gsap.min.js"></script>
+    <style>
+      @font-face {
+        font-family: "Anton";
+        font-style: normal;
+        font-weight: 400;
+        font-display: block;
+        src: url("vendor/anton.woff2") format("woff2");
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background: #000;
+      }
+
+      #root {
+        position: relative;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background: #000;
+      }
+
+      .clip {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+      }
+
+      /* The photo layer. Every scene keeps the author's image untouched —
+         cover for the portrait shots, contain over a blurred copy of itself
+         for the landscape ones so nothing that matters gets cropped away. */
+      .stage {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        background: #000;
+      }
+
+      .photo {
+        position: absolute;
+        inset: 0;
+        width: 1080px;
+        height: 1920px;
+        object-fit: cover;
+        object-position: center;
+      }
+
+      .backdrop {
+        position: absolute;
+        inset: -80px;
+        width: 1240px;
+        height: 2080px;
+        object-fit: cover;
+        filter: blur(48px) saturate(1.15) brightness(0.55);
+      }
+
+      .contained {
+        object-fit: contain;
+        object-position: center 64%;
+      }
+
+      /* Legibility scrim: dark at the top where the copy sits, dark again at
+         the very bottom so the TikTok UI has something to sit on. */
+      .scrim-strong {
+        background: linear-gradient(
+          180deg,
+          rgba(0, 0, 0, 0.9) 0%,
+          rgba(0, 0, 0, 0.8) 30%,
+          rgba(0, 0, 0, 0.34) 46%,
+          rgba(0, 0, 0, 0.24) 78%,
+          rgba(0, 0, 0, 0.62) 100%
+        );
+      }
+
+      .scrim {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          180deg,
+          rgba(0, 0, 0, 0.74) 0%,
+          rgba(0, 0, 0, 0.52) 26%,
+          rgba(0, 0, 0, 0.12) 48%,
+          rgba(0, 0, 0, 0.18) 78%,
+          rgba(0, 0, 0, 0.6) 100%
+        );
+      }
+
+      /* Caption safe area: 8% side margins, copy in the upper third, and the
+         bottom 15% / right 12% left clear for TikTok's own chrome. */
+      .cap {
+        position: absolute;
+        left: 86px;
+        top: 300px;
+        width: 908px;
+        font-family: "Anton", "Liberation Sans", sans-serif;
+        font-size: 96px;
+        line-height: 1.06;
+        letter-spacing: -0.005em;
+        color: #ffffff;
+        text-shadow:
+          0 4px 22px rgba(0, 0, 0, 0.92),
+          0 2px 6px rgba(0, 0, 0, 0.85);
+      }
+
+      .cap-hook {
+        font-size: 128px;
+        line-height: 1.02;
+      }
+
+      .cap-payoff {
+        font-size: 104px;
+      }
+
+      /* The number carries the joke, so it gets the accent. */
+      .tag {
+        display: block;
+        font-size: 0.52em;
+        letter-spacing: 0.06em;
+        color: #ffd166;
+        margin-bottom: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="13.5"
+      data-width="1080"
+      data-height="1920"
+    >
+      <!-- Scene 1 — hook. Landscape source, so contained over its own blur. -->
+      <section id="s1" class="clip" data-start="0" data-duration="2" data-track-index="1">
+        <div class="stage">
+          <img id="s1-bg" class="backdrop" data-layout-allow-overflow src="assets/01-lease-space.jpg" alt="" />
+          <img id="s1-img" class="photo contained" data-layout-allow-overflow src="assets/01-lease-space.jpg" alt="" />
+        </div>
+        <div class="scrim"></div>
+        <div id="s1-cap" class="cap cap-hook">reasons to open a coffee shop</div>
+      </section>
+
+      <!-- Scene 2 — the P&L. Contained so the numbers stay readable. -->
+      <section id="s2" class="clip" data-start="2" data-duration="2.5" data-track-index="1">
+        <div class="stage">
+          <img id="s2-bg" class="backdrop" data-layout-allow-overflow src="assets/02-costs.png" alt="" />
+          <img id="s2-img" class="photo contained" data-layout-allow-overflow src="assets/02-costs.png" alt="" />
+        </div>
+        <div class="scrim scrim-strong"></div>
+        <div id="s2-cap" class="cap">
+          <span class="tag">reason #1</span>lose 20k in 2 month
+        </div>
+      </section>
+
+      <!-- Scene 3 — pre-dawn skyline. -->
+      <section id="s3" class="clip" data-start="4.5" data-duration="2.5" data-track-index="1">
+        <div class="stage">
+          <img id="s3-img" class="photo" data-layout-allow-overflow src="assets/03-5am.jpg" alt="" />
+        </div>
+        <div class="scrim"></div>
+        <div id="s3-cap" class="cap">
+          <span class="tag">reason #2</span>wake up at 5am
+        </div>
+      </section>
+
+      <!-- Scene 4 — bare studs on site. -->
+      <section id="s4" class="clip" data-start="7" data-duration="2.5" data-track-index="1">
+        <div class="stage">
+          <img id="s4-img" class="photo" data-layout-allow-overflow src="assets/04-construction.jpg" alt="" />
+        </div>
+        <div class="scrim"></div>
+        <div id="s4-cap" class="cap">
+          <span class="tag">reason #3</span>doing construction at 98 degree
+        </div>
+      </section>
+
+      <!-- Scene 5 — the payoff the beat drops on. -->
+      <section id="s5" class="clip" data-start="9.5" data-duration="4" data-track-index="1">
+        <div class="stage">
+          <img id="s5-img" class="photo" data-layout-allow-overflow src="assets/05-paddling.jpg" alt="" />
+        </div>
+        <div class="scrim"></div>
+        <div id="s5-cap" class="cap cap-payoff">
+          <span class="tag">reason #4</span>enjoy paddling whenever you want
+        </div>
+      </section>
+    </div>
+
+    <script>
+      // Scene table drives both the Ken Burns move and the caption entrance so
+      // the timing here stays in step with the data-start/data-duration above.
+      const SCENES = [
+        { id: "s1", start: 0, duration: 2, from: 1.0, to: 1.07 },
+        { id: "s2", start: 2, duration: 2.5, from: 1.0, to: 1.06 },
+        { id: "s3", start: 4.5, duration: 2.5, from: 1.08, to: 1.0 },
+        { id: "s4", start: 7, duration: 2.5, from: 1.0, to: 1.09 },
+        { id: "s5", start: 9.5, duration: 4, from: 1.0, to: 1.12 },
+      ];
+
+      function buildTimeline() {
+        const tl = gsap.timeline({ paused: true });
+
+        SCENES.forEach((scene) => {
+          // Slow push-in (or pull-back) across the whole scene. fromTo keeps the
+          // start state in the tween, never in CSS, so the two cannot disagree.
+          tl.fromTo(
+            "#" + scene.id + "-img",
+            { scale: scene.from },
+            { scale: scene.to, duration: scene.duration, ease: "none" },
+            scene.start,
+          );
+
+          // The blurred backdrop drifts the opposite way, very slightly, so the
+          // contained shots do not feel locked to the frame.
+          if (scene.id === "s1" || scene.id === "s2") {
+            tl.fromTo(
+              "#" + scene.id + "-bg",
+              { scale: 1.04 },
+              { scale: 1.0, duration: scene.duration, ease: "none" },
+              scene.start,
+            );
+          }
+
+          // Caption lands just after the cut.
+          tl.fromTo(
+            "#" + scene.id + "-cap",
+            { y: 30, autoAlpha: 0 },
+            { y: 0, autoAlpha: 1, duration: 0.3, ease: "power3.out" },
+            scene.start + 0.05,
+          );
+        });
+
+        // The drop lands on scene 5: one firm punch on the payoff copy.
+        tl.fromTo(
+          "#s5-cap",
+          { scale: 0.94 },
+          { scale: 1, duration: 0.42, ease: "back.out(2.2)" },
+          9.55,
+        );
+
+        window.__timelines["main"] = tl;
+      }
+
+      // Anton is a local woff2, but register only once it is actually laid out
+      // so the first frames are never measured against the fallback face.
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(buildTimeline);
+      } else {
+        buildTimeline();
+      }
+    </script>
+  </body>
+</html>

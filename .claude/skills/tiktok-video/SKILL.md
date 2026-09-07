@@ -49,20 +49,60 @@ pictures, builds a HyperFrames brief, and renders it.
    Fetch one of the image URLs (`curl -sSI <url>`) to confirm it really is
    public before spending a render.
 
-5. **Compose.** Pass the full contents of `prompt.md` as the `prompt` argument
-   to `mcp__HyperFrames_by_HeyGen__compose`. Leave `projectId` empty for a new
-   video; pass the previous `projectId` for an edit. Only set `designSource`
-   when the user named a house style.
+5. **Render it.** Hosted HyperFrames `compose`/`render_video` are **disabled for
+   Claude Code** (and every CLI/IDE agent) — the MCP rejects them and points at
+   the local skills. So render locally with the HyperFrames CLI, which also
+   means local picture paths work directly and hosting is only needed if you
+   want the images reachable from elsewhere.
 
-   `compose` returns immediately and renders in the background. Poll
-   `mcp__HyperFrames_by_HeyGen__get_project_status` until `session_status` is
-   `draft`/`completed`; if it goes to `waiting`, relay the agent's question to
-   the user and send their answer back through another `compose` call.
+   One-time environment setup (this container ships neither):
 
-6. **Deliver.** Send the storyboard alongside the video so they can see how
-   their pictures were used. Give the user the video and the project link. If they ask for
-   the MP4 URL, call `render_video` then `get_render_status` and put the
-   `video_url` in the reply itself.
+   ```bash
+   apt-get update -qq && apt-get install -y -qq ffmpeg   # Playwright's ffmpeg is VP8-only
+   npx -y hyperframes@latest browser ensure              # headless Chrome for rendering
+   ```
+
+   Then scaffold, author, gate, and render:
+
+   ```bash
+   cd videos && npx -y hyperframes@latest init <slug> --non-interactive \
+     --example=blank --resolution=portrait
+   cd <slug> && cp ../../plots/<slug>-photos/* assets/
+   # author index.html per the contract below
+   npx -y hyperframes@latest check                       # must be 0 errors
+   npx -y hyperframes@latest snapshot --at <midpoints>   # then read contact-sheet.jpg
+   npx -y hyperframes@latest render --quality high --output <slug>.mp4
+   ffprobe -v error -show_entries format=duration -show_entries stream=width,height <slug>.mp4
+   ```
+
+   **`cdn.jsdelivr.net` is blocked by the egress proxy**, so the scaffold's GSAP
+   `<script>` tag fails silently and nothing animates. Vendor it instead:
+   `npm pack gsap@3.14.2`, extract `package/dist/gsap.min.js` to `vendor/`, and
+   point the tag at the local copy. Do the same for fonts —
+   `fonts.googleapis.com` and `fonts.gstatic.com` *do* work, so fetch the woff2
+   and serve it from `vendor/` via `@font-face`. Take the **latin** subset, not
+   the first `@font-face` in the CSS (that one is Vietnamese).
+
+   Composition contract, in short: a sized root `<div>` carrying
+   `data-composition-id`/`data-width`/`data-height`/`data-duration`; one
+   `class="clip"` section per scene with `data-start` and `data-duration`; and
+   exactly one paused GSAP timeline registered on
+   `window.__timelines["<composition-id>"]`. Never pair a CSS `transform` with a
+   GSAP tween on the same property — use `fromTo` so the start state lives in
+   the tween. Never tween `display`/`visibility` on a clip element. A Ken Burns
+   push-in trips the layout audit, so mark those images
+   `data-layout-allow-overflow`.
+
+   Landscape photos in a 9:16 frame: `object-fit: cover` crops a 16:9 source to
+   its centre ~31%, which throws away most of the shot. Use `contain` over a
+   blurred copy of the same image, with `object-position: center 64%` so the
+   caption owns the space above rather than leaving dead blur below.
+
+6. **Deliver.** Send the MP4 and the storyboard so they can see how their
+   pictures were used. Say plainly that the render is silent: HyperFrames has no
+   music unless a track is supplied, and for TikTok that is correct anyway —
+   creators add audio in the app, where the in-app track drives reach. Tell them
+   the timestamp their beat should drop on.
 
 ## Edits
 
@@ -72,10 +112,14 @@ one. Prefer that over starting over. Swapping a picture means replacing the file
 and pushing again — the URL stays the same, so re-compose to pick it up, or use
 a new filename to sidestep any caching.
 
-## If HyperFrames compose is unavailable
+## Why the brief still matters when rendering locally
 
-The HyperFrames MCP disables `compose`/`render_video` for some CLI clients. If a
-call is rejected that way, say so plainly and offer the fallbacks: install the
-local skills (`npx skills add heygen-com/hyperframes`), or hand the user
-`build/<slug>/prompt.md` to paste into HyperFrames themselves. The storyboard
-HTML is still worth sending either way.
+`prompt.md` is no longer pasted into a hosted agent, but it stays the spec you
+author against: it is where the scene order, the per-scene durations, the
+verbatim copy and the safe margins are pinned down. Read it before writing the
+HTML and check the finished composition back against it.
+
+If the user would rather drive HyperFrames themselves — or wants a hosted
+project with a shareable `app.heygen.com` link, which the local path does not
+produce — hand them `build/<slug>/prompt.md` to paste into HyperFrames on the
+web, along with the hosted image URLs from `--asset-base github`.
