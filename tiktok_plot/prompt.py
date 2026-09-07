@@ -43,14 +43,44 @@ def _visual_for(scene: Scene) -> str:
     )
 
 
+def _picture_lines(scene: Scene) -> list[str]:
+    """The picture half of a scene block.
+
+    A scene either carries the author's own image — which must be used as-is —
+    or a description for the video agent to source or generate from.
+    """
+    if not scene.has_image:
+        return [f"- Picture: {_visual_for(scene)}"]
+
+    if scene.image_is_local:
+        # The brief was built before the file was hosted. Say so loudly rather
+        # than emitting a path HyperFrames would silently fail to fetch.
+        source = (
+            f"!! UNHOSTED LOCAL FILE: {scene.image} — replace with a public "
+            "https:// URL before composing !!"
+        )
+    else:
+        source = scene.image
+
+    lines = [
+        f"- Picture: use the author's supplied image, exactly as provided: {source}",
+        "- Do not regenerate, redraw, restyle, crop out the subject or substitute a "
+        "stock photo for this image. Fit it to frame (cover, centred) and let it fill "
+        "the canvas behind the text.",
+    ]
+    if scene.visual:
+        lines.append(f"- Treatment for that image: {scene.visual}")
+    return lines
+
+
 def _scene_block(scene: Scene) -> str:
     lines = [
         f"### Scene {scene.index} — {scene.seconds:g}s ({scene.role})",
         f"- On-screen text (use verbatim, do not reword): “{scene.text}”"
         if scene.text
         else "- On-screen text: none, image only",
-        f"- Picture: {_visual_for(scene)}",
     ]
+    lines.extend(_picture_lines(scene))
     direction = ROLE_DIRECTION.get(scene.role, "")
     if direction:
         lines.append(f"- Direction: {direction}")
@@ -85,6 +115,15 @@ def build_prompt(plot: Plot) -> str:
         "Keep type treatment, colour and framing identical across all scenes so the "
         "video reads as one piece.",
     ]
+    supplied = plot.with_images
+    if supplied:
+        rules.insert(
+            1,
+            f"{len(supplied)} of the {len(plot.scenes)} scenes come with the author's own "
+            "picture, given as a URL under that scene. Those images are the content of "
+            "the video: use each one as-is in its scene, unaltered and un-restyled. Never "
+            "swap in stock or generated imagery for a scene that has one.",
+        )
     if plot.voiceover:
         rules.append(
             "Add a voiceover that reads each scene's on-screen text, timed to that scene."

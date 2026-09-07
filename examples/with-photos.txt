@@ -1,0 +1,12 @@
+# A plot where the author supplies the pictures.
+# Build it with:  python3 -m tiktok_plot.cli build examples/with-photos.txt \
+#                   -o build/photos --asset-base github
+---
+title: My own photos
+seconds_per_scene: 2.5
+music: upbeat, no lyrics
+---
+This one is my photo | photos/01.png
+(4s) So is this one | photos/02.png | slow push-in from the left
+Mine too | photos/03.png
+This line has no photo, so describe it | a kettle on a stove, steam rising

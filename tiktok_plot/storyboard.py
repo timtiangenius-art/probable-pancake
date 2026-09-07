@@ -7,9 +7,16 @@ direction that will be sent to HyperFrames.
 
 from __future__ import annotations
 
+import base64
+import mimetypes
 from html import escape
+from pathlib import Path
 
-from .parser import Plot
+from .parser import Plot, Scene
+
+# Pictures are inlined so the storyboard is one portable file. Anything bigger
+# than this is referenced by path instead of bloating the document.
+MAX_INLINE_BYTES = 4 * 1024 * 1024
 
 ASPECT_RATIO = {"9:16": "9 / 16", "1:1": "1 / 1", "16:9": "16 / 9", "4:5": "4 / 5"}
 
@@ -90,20 +97,75 @@ h1 { margin: 0 0 6px; font-size: 30px; letter-spacing: -0.02em; }
 .secs { position: absolute; top: 10px; right: 10px; font-size: 11px; color: var(--muted); }
 .visual { color: var(--muted); font-size: 13px; }
 .visual em { color: #c9c9d4; font-style: normal; }
+.photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.frame.has-photo .caption { position: relative; z-index: 1; }
+.frame.has-photo::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.15) 45%, rgba(0,0,0,0.55) 100%);
+}
+.frame.has-photo .badge, .frame.has-photo .secs { z-index: 1; }
+.warn { color: #ffb020; }
 """
 
 
-def _card(index: int, role: str, seconds: float, text: str, visual: str) -> str:
+def _image_src(scene: Scene, base_dir: Path | None) -> tuple[str, str]:
+    """Return ``(src, note)`` for a scene's picture.
+
+    Local files become ``data:`` URIs so the storyboard travels as one file;
+    remote URLs are used directly. ``src`` is empty when there is no usable
+    picture, and ``note`` explains why.
+    """
+    if not scene.has_image:
+        return "", ""
+    if not scene.image_is_local:
+        return scene.image, ""
+
+    path = scene.resolved_image(base_dir)
+    if path is None or not path.is_file():
+        return "", f"missing file: {scene.image}"
+    if path.stat().st_size > MAX_INLINE_BYTES:
+        return "", f"too large to inline: {scene.image}"
+
+    mime = mimetypes.guess_type(path.name)[0] or "image/jpeg"
+    payload = base64.b64encode(path.read_bytes()).decode("ascii")
+    return f"data:{mime};base64,{payload}", ""
+
+
+def _card(
+    index: int,
+    role: str,
+    seconds: float,
+    text: str,
+    visual: str,
+    src: str = "",
+    note: str = "",
+) -> str:
     caption = (
         f'<div class="caption">{escape(text)}</div>'
         if text
         else '<div class="caption empty">image only</div>'
     )
-    visual_html = (
-        f"<em>{escape(visual)}</em>" if visual else "auto — inferred from the text"
-    )
+    if visual:
+        visual_html = f"<em>{escape(visual)}</em>"
+    elif src or note:
+        visual_html = "your picture"
+    else:
+        visual_html = "auto — inferred from the text"
+    if note:
+        visual_html += f' <span class="warn">{escape(note)}</span>'
+
+    photo = f'<img class="photo" src="{escape(src, quote=True)}" alt="">' if src else ""
     return f"""      <figure class="card">
-        <div class="frame">
+        <div class="frame{' has-photo' if src else ''}">
+          {photo}
           <span class="badge role-{escape(role)}">{index} · {escape(role)}</span>
           <span class="secs">{seconds:g}s</span>
           {caption}
@@ -112,8 +174,13 @@ def _card(index: int, role: str, seconds: float, text: str, visual: str) -> str:
       </figure>"""
 
 
-def build_storyboard(plot: Plot) -> str:
-    """Return a standalone HTML document previewing every scene."""
+def build_storyboard(plot: Plot, base_dir: Path | None = None) -> str:
+    """Return a standalone HTML document previewing every scene.
+
+    Local pictures are read relative to ``base_dir`` (defaulting to the plot
+    file's own directory) and inlined, so the result is one portable file.
+    """
+    base = base_dir if base_dir is not None else plot.base_dir
     ratio = ASPECT_RATIO.get(plot.aspect.strip(), ASPECT_RATIO["9:16"])
     title = plot.title or "Untitled TikTok"
     bits = [
@@ -124,10 +191,16 @@ def build_storyboard(plot: Plot) -> str:
     if plot.style:
         bits.append(f"style <strong>{escape(plot.style)}</strong>")
     bits.append("voiceover <strong>%s</strong>" % ("on" if plot.voiceover else "off"))
+    if plot.with_images:
+        bits.append(f"<strong>{len(plot.with_images)}</strong> supplied pictures")
 
-    cards = "\n".join(
-        _card(s.index, s.role, s.seconds, s.text, s.visual) for s in plot.scenes
-    )
+    cards = []
+    for scene in plot.scenes:
+        src, note = _image_src(scene, base)
+        cards.append(
+            _card(scene.index, scene.role, scene.seconds, scene.text, scene.visual, src, note)
+        )
+    cards = "\n".join(cards)
     return f"""<!doctype html>
 <html lang="en">
 <head>
