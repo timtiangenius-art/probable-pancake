@@ -7,11 +7,7 @@
 title: Another Day of Opening Coffee Shop
 seconds_per_scene: 2.5
 music: steady build through the morning, drop landing on the last scene
-notes: |
-  Each caption is one line of the author's copy. Render it as a fixed series
-  header ("Another Day of Opening Coffee Shop") with the time-stamped beat
-  under it, so the header stays put and only the time and activity change.
-  Deadpan errands early, reward at the end.
+notes: Render each caption as a fixed series header ("Another Day of Opening Coffee Shop") with the time-stamped beat under it, so the header stays put and only the time and activity change. Deadpan errands early, reward at the end.
 ---
 (2s) Another Day of Opening Coffee Shop 9am: Visiting Health Department | another-day-photos/1.jpeg | hold, very slow push-in
 (2s) Another Day of Opening Coffee Shop 9am: Visiting Health Department | another-day-photos/2.jpeg | same beat continuing, slow drift
