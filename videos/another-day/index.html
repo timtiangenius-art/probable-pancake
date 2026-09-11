@@ -72,6 +72,13 @@
         object-position: 58% center;
       }
 
+      /* Scene 7: the lock box hangs right of centre on the stud, so the crop
+         leans right and the push-in converges on the box rather than the frame. */
+      .photo-lockbox {
+        object-position: 85% center;
+        transform-origin: 73% 51%;
+      }
+
       /* Scene 5: the coffee map is the subject and its outer columns matter,
          so it is contained whole over a blurred copy of itself. */
       .photo-contain {
@@ -146,7 +153,7 @@
       id="root"
       data-composition-id="main"
       data-start="0"
-      data-duration="15"
+      data-duration="17.5"
       data-width="1080"
       data-height="1920"
     >
@@ -213,14 +220,26 @@
       </section>
 
       <!-- Scene 6 — 12pm, the payoff the beat drops on. -->
-      <section id="s6" class="clip" data-start="11.5" data-duration="3.5" data-track-index="1">
+      <section id="s6" class="clip" data-start="11.5" data-duration="2.5" data-track-index="1">
         <div class="stage">
           <img id="s6-img" class="photo" data-layout-allow-overflow src="assets/6.jpg" alt="" />
         </div>
         <div class="scrim"></div>
-        <div id="s6-cap" class="cap cap-payoff">
+        <div id="s6-cap" class="cap">
           <span class="series">Another Day of Opening Coffee Shop</span>
           <span class="time">12 pm:</span> Selecting Coffee Samples
+        </div>
+      </section>
+
+      <!-- Scene 7 — 4pm, the payoff the beat drops on. -->
+      <section id="s7" class="clip" data-start="14" data-duration="3.5" data-track-index="1">
+        <div class="stage">
+          <img id="s7-img" class="photo photo-lockbox" data-layout-allow-overflow src="assets/7.jpg" alt="" />
+        </div>
+        <div class="scrim"></div>
+        <div id="s7-cap" class="cap cap-payoff">
+          <span class="series">Another Day of Opening Coffee Shop</span>
+          <span class="time">4 pm:</span> Replace My Lock Box
         </div>
       </section>
     </div>
@@ -238,7 +257,8 @@
         { id: "s3", start: 4,    duration: 2.5, from: { scale: 1.05 }, to: { scale: 1.16 } },
         { id: "s4", start: 6.5,  duration: 2.5, from: { scale: 1.12 }, to: { scale: 1.0 } },
         { id: "s5", start: 9,    duration: 2.5, from: { scale: 1.0 },  to: { scale: 1.07 } },
-        { id: "s6", start: 11.5, duration: 3.5, from: { scale: 1.0 },  to: { scale: 1.12 } },
+        { id: "s6", start: 11.5, duration: 2.5, from: { scale: 1.0 },  to: { scale: 1.12 } },
+        { id: "s7", start: 14,   duration: 3.5, from: { scale: 1.0 },  to: { scale: 1.28 }, ease: "power1.inOut" },
       ];
 
       function buildTimeline() {
@@ -276,12 +296,12 @@
           9,
         );
 
-        // The drop lands on scene 6: one firm punch on the payoff copy.
+        // The drop lands on scene 7: one firm punch on the payoff copy.
         tl.fromTo(
-          "#s6-cap",
+          "#s7-cap",
           { scale: 0.94 },
           { scale: 1, duration: 0.42, ease: "back.out(2.2)" },
-          11.55,
+          14.05,
         );
 
         window.__timelines["main"] = tl;
