@@ -1,0 +1,21 @@
+# Another Day of Opening Coffee Shop — day-in-the-life, 6 shots, photos supplied by the author.
+# Line 1 of the plot supplied two pictures (image 1 and 2), so the 9am beat is split
+# across two scenes that share the same caption.
+# Build:  python3 -m tiktok_plot.cli build plots/another-day.txt \
+#           -o build/another-day --asset-base github
+---
+title: Another Day of Opening Coffee Shop
+seconds_per_scene: 2.5
+music: steady build through the morning, drop landing on the last scene
+notes: |
+  Each caption is one line of the author's copy. Render it as a fixed series
+  header ("Another Day of Opening Coffee Shop") with the time-stamped beat
+  under it, so the header stays put and only the time and activity change.
+  Deadpan errands early, reward at the end.
+---
+(2s) Another Day of Opening Coffee Shop 9am: Visiting Health Department | another-day-photos/1.jpeg | hold, very slow push-in
+(2s) Another Day of Opening Coffee Shop 9am: Visiting Health Department | another-day-photos/2.jpeg | same beat continuing, slow drift
+Another Day of Opening Coffee Shop 10am: Arriving Coffee Roaster | another-day-photos/3.jpeg | slow push-in on the arrival
+Another Day of Opening Coffee Shop 11 am: Roasting Fresh Coffee | another-day-photos/4.jpeg | slow drift across the roaster
+Another Day of Opening Coffee Shop 11:30 am: Curious about Coffee Region | another-day-photos/5.jpeg | slow push-in
+(3.5s) Another Day of Opening Coffee Shop 12 pm: Selecting Coffee Samples | another-day-photos/6.jpeg | the drop lands here — hold wide, slow push-in
